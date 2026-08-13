@@ -8,14 +8,7 @@
 # INPUT  : female_obj_annotated.rds   (RDS_ANNOTATED, from stage 02)
 # OUTPUT : de_results.rds             (RDS_DE — consumed by 04 and 05c)
 #          volcano/deseq2/, volcano/seurat/ tables + volcano figures
-#
-# Faithful split of Sections 6-7 of MASTER_NUDT16_FEMALES.R. NOTE: 6B uses
-# Seurat FindMarkers (Wilcoxon), which — like FindAllMarkers — routes to presto
-# on Seurat v5. If R aborts here, reinstall/remove `presto`
-# (remove.packages("presto") falls back to Seurat's base Wilcoxon).
 # =============================================================================
-
-# --- source shared config ----------------------------------------------------
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
   cand <- c(
     "00_config.R",
@@ -89,13 +82,7 @@ run_pseudobulk_deseq <- function(counts_sub, meta_sub, label) {
   if (nrow(pb) < 10) { message("    skip: <10 genes pass count filter"); return(NULL) }
   res_df <- tryCatch({
     dds <- DESeqDataSetFromMatrix(countData = round(pb), colData = coldata, design = ~ genotype)
-    # poscounts size factors: the default "ratio" (median-of-ratios) needs at
-    # least one gene with a non-zero count in EVERY sample; with few pseudobulk
-    # replicates that can be empty -> estimateSizeFactors() errors with "every
-    # gene contains at least one zero" and aborts the run. "poscounts" (Love et
-    # al., recommended for single-cell / sparse pseudobulk) computes geometric
-    # means over positive counts only and is robust to this. fitType="local"
-    # falls back gracefully when the parametric dispersion fit fails.
+    
     dds <- DESeq(dds, sfType = "poscounts", fitType = "local", quiet = TRUE)
     res <- results(dds, contrast = c("genotype","KO","WT"))
     res <- tryCatch(lfcShrink(dds, contrast = c("genotype","KO","WT"), type = "ashr", res = res),
@@ -291,8 +278,6 @@ for (ct in names(seurat_de_by_celltype)) {
   })
 }
 
-# =============================================================================
-# Save DE bundle for downstream stages (04 GSEA/ORA, 05c regulon DE overlay)
 # =============================================================================
 de_results <- list(
   de_global               = de_global,
