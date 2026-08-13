@@ -3,22 +3,15 @@
 # 05b_run_pyscenic.sh  —  NUDT16 KO female spleen scRNA-seq
 #   Genome-wide gene regulatory network inference with pySCENIC:
 #     GRNBoost2 (grn) -> cisTarget pruning (ctx) -> AUCell (aucell)
-#
-# ASSUMES pySCENIC and the mm10 cisTarget databases are ALREADY INSTALLED
-# (per your setup choice). Edit the RESOURCES block below to point at your
-# database / TF-list / motif-annotation files, then run:
-#
-#     bash 05b_run_pyscenic.sh
-#
-# INPUTS  (from 05a_export_for_scenic.R, in $SCENIC_DIR):
+# INPUTS 
 #   expr_counts.mtx, genes.txt, barcodes.txt, cell_metadata.csv, validated_genes.txt
 #   (or a prebuilt female_counts.loom)
 # OUTPUTS (in $SCENIC_DIR):
 #   adjacencies.tsv        GRNBoost2 co-expression modules
 #   regulons.csv           cisTarget-pruned regulons (motif-enriched)
 #   aucell.loom            AUCell regulon activity (loom)
-#   auc_mtx.csv            cells x regulons AUCell matrix  (consumed by 05c)
-#   regulon_targets.csv    regulon,target long table       (consumed by 05c)
+#   auc_mtx.csv            cells x regulons AUCell matrix 
+#   regulon_targets.csv    regulon,target long table     
 # =============================================================================
 set -euo pipefail
 
@@ -26,7 +19,7 @@ set -euo pipefail
 PROJECT_DIR="${PROJECT_DIR:-/Users/budankm/Desktop/Sequencing/GONG}"
 SCENIC_DIR="${SCENIC_DIR:-$PROJECT_DIR/results/females/scenic}"
 
-# ---- RESOURCES (EDIT THESE) -------------------------------------------------
+# ---- RESOURCES  -------------------------------------------------
 # Mouse mm10 mc9nr cisTarget databases + TF list + motif annotations.
 # Download once from https://resources.aertslab.org/cistarget/ if you have not.
 RESOURCES_DIR="${RESOURCES_DIR:-$HOME/scenic_resources/mm10}"
@@ -57,7 +50,7 @@ echo "   RANKING_DBS  = $RANKING_DBS"
 echo "   workers      = $NWORKERS   seed = $SEED"
 echo "==============================================================="
 
-# ---- sanity checks ----------------------------------------------------------
+# ---- ----------------------------------------------------------
 command -v pyscenic >/dev/null 2>&1 || { echo "ERROR: pyscenic not on PATH."; exit 1; }
 [ -f "$TF_LIST" ]     || { echo "ERROR: TF list not found: $TF_LIST"; exit 1; }
 [ -f "$MOTIF_ANNOT" ] || { echo "ERROR: motif annotations not found: $MOTIF_ANNOT"; exit 1; }
@@ -65,7 +58,7 @@ for db in $RANKING_DBS; do
   [ -f "$db" ] || { echo "ERROR: ranking DB not found: $db"; exit 1; }
 done
 
-# ---- 0. Build the loom from the .mtx trio if it does not exist --------------
+# ------------------
 if [ ! -f "$LOOM" ]; then
   echo "[0] Building loom from expr_counts.mtx ..."
   python3 - "$SCENIC_DIR" <<'PY'
