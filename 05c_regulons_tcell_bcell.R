@@ -3,23 +3,7 @@
 #   pySCENIC downstream: within the T-cell and B-cell compartments, identify and
 #   plot the regulons (TFs) that regulate the 7 validated genes, and test
 #   KO-vs-WT differential regulon activity.
-#
-# INPUT  : female_obj_annotated.rds        (RDS_ANNOTATED, from stage 02)
-#          scenic/auc_mtx.csv              (cells x regulons; from 05b)
-#          scenic/regulon_targets.csv      (regulon,target long table; from 05b)
-#          scenic/validated_genes.txt      (7 validated genes present; from 05a)
-# OUTPUT : scenic/regulons_targeting_validated_genes.csv
-#          scenic/tcell/ and scenic/bcell/:
-#             regulon_activity_by_genotype.csv
-#             differential_regulon_activity.csv       (Wilcoxon KO vs WT, all regulons)
-#             focus_regulons_differential.csv         (regulators of the 7 genes)
-#             heatmap_focus_regulon_activity.pdf/.png
-#             barplot_focus_regulon_deltaAUC.pdf/.png
-#             regulator_target_map.pdf/.png           (regulon x 7-gene edge map)
-#
-# Differential testing is a plain Wilcoxon on the AUCell matrix (no presto), so
-# it cannot trigger the Seurat v5 marker crash.
-# =============================================================================
+#========================================================================
 
 # --- source shared config ----------------------------------------------------
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
@@ -36,8 +20,8 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
 
 message("\n=========  STAGE 05c — SCENIC REGULONS (T & B cells, 7 genes)  =========")
 
-# --- Compartment definitions (edit to widen the T-lineage if desired) --------
-TCELL_TYPES <- c("T cells")            # add "NKT","Tgd" to include those lineages
+# --- Compartment definitions  --------
+TCELL_TYPES <- c("T cells")            
 BCELL_TYPES <- c("B cells")
 
 # --- Load metadata + SCENIC outputs ------------------------------------------
@@ -72,17 +56,16 @@ meta <- meta[match(common, meta$barcode), ]
 stopifnot(identical(rownames(auc), meta$barcode))
 
 # =============================================================================
-# Identify the FOCUS regulons: those that regulate any of the 7 validated genes
-#   (target-based) OR whose TF is itself one of the 7 (e.g. E2f8 is a TF).
+# Identify the FOCUS regulons
 # =============================================================================
 targets_hit <- reg_targets[reg_targets$target %in% vg, , drop = FALSE]
 focus_from_targets <- unique(targets_hit$regulon)
-# regulon names look like "E2f8(+)"; TF-in-7 check by stripping the suffix.
+
 reg_tf <- sub("\\(.*$", "", colnames(auc))
 focus_from_tf <- colnames(auc)[reg_tf %in% vg]
 focus_regulons <- intersect(unique(c(focus_from_targets, focus_from_tf)), colnames(auc))
 
-# Table: which validated gene(s) each focus regulon targets.
+
 reg_vg_map <- targets_hit %>%
   dplyr::group_by(regulon) %>%
   dplyr::summarize(targeted_validated_genes = paste(sort(unique(target)), collapse = "; "),
@@ -103,7 +86,7 @@ if (!length(focus_regulons))
 # =============================================================================
 # Per-compartment analysis
 # =============================================================================
-# Wilcoxon KO-vs-WT differential regulon activity across ALL regulons.
+
 diff_regulon_activity <- function(auc_sub, geno_sub) {
   ko_i <- geno_sub == "KO"; wt_i <- geno_sub == "WT"
   res <- lapply(colnames(auc_sub), function(r) {
