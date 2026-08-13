@@ -2,16 +2,13 @@
 # 05a_export_for_scenic.R  —  NUDT16 KO female spleen scRNA-seq
 #   Export the annotated Seurat object into the inputs pySCENIC needs.
 #
-# INPUT  : female_obj_annotated.rds   (RDS_ANNOTATED, from stage 02)
-# OUTPUT : scenic/expr_counts.mtx        (genes x cells, raw counts, MatrixMarket)
-#          scenic/genes.txt              (gene symbols, matrix row order)
-#          scenic/barcodes.txt           (cell barcodes, matrix col order)
-#          scenic/cell_metadata.csv      (barcode, celltype_marker, genotype, sample, cluster)
-#          scenic/validated_genes.txt    (the 7 validated genes present in the data)
-#          scenic/female_counts.loom     (ONLY if SCopeLoomR is installed; optional)
-#
-# The .mtx trio + metadata is the portable, dependency-light export. 05b builds
-# the loom pySCENIC consumes from these files (via loompy) if no loom exists.
+# INPUT  : female_obj_annotated.rds   
+# OUTPUT : scenic/expr_counts.mtx        
+#          scenic/genes.txt              
+#          scenic/barcodes.txt          
+#          scenic/cell_metadata.csv      
+#          scenic/validated_genes.txt    
+#          scenic/female_counts.loom    
 # =============================================================================
 
 # --- source shared config ----------------------------------------------------
