@@ -8,13 +8,8 @@
 # INPUT  : de_results.rds   (RDS_DE, from stage 03)
 # OUTPUT : enrichment/ (GO/KEGG/Reactome/Hallmark ORA on pseudobulk DEGs)
 #          enrichment_hallmark/ (Hallmark GSEA + directional ORA on Seurat DE)
-#
-# Faithful split of Section 9 of MASTER_NUDT16_FEMALES.R. The ORA helper
-# run_enrichment_analysis() (defined in the master's Section 6) is included here
-# because it is only used by enrichment.
 # =============================================================================
 
-# --- source shared config ----------------------------------------------------
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
   cand <- c(
     "00_config.R",
@@ -38,7 +33,7 @@ gene_universe            <- de$gene_universe
 seurat_de_global         <- de$seurat_de_global
 seurat_de_by_celltype    <- de$seurat_de_by_celltype
 
-# ---- ORA helper (from master Section 6A; used by 9A) ------------------------
+# ---- ORA helper 
 run_enrichment_analysis <- function(gene_list, gene_universe, analysis_name) {
   message(sprintf("  enrichment: %s (%d genes)", analysis_name, length(gene_list)))
   if (length(gene_list) == 0) return(list())
@@ -95,7 +90,7 @@ run_enrichment_analysis <- function(gene_list, gene_universe, analysis_name) {
 # =============================================================================
 message("\n[9] Functional enrichment (pseudobulk ORA + Hallmark GSEA/ORA)...")
 
-# ---- 9A. Over-representation on pseudobulk DEGs (up / down separately) -------
+# ---- 9A. Over-representation on pseudobulk DEGs -------
 safe_panel("enrichment_pseudobulk", {
   write_enr <- function(res_list, prefix) {
     if (!length(res_list)) { message("    no enrichment terms for ", prefix); return(invisible()) }
@@ -149,7 +144,7 @@ safe_panel("enrichment_pseudobulk", {
   message("  enrichment: pseudobulk ORA written to enrichment/")
 })
 
-# ---- 9B. MSigDB Hallmark GSEA + directional ORA on Seurat FindMarkers --------
+# ---- 9B. MSigDB Hallmark GSEA  --------
 safe_panel("enrichment_hallmark", {
   # Build Hallmark gene sets in mouse symbols (once)
   hm <- tryCatch(msigdbr(species = "Mus musculus", category = "H"),
