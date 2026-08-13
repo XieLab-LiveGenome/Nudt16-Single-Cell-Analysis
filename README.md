@@ -142,9 +142,6 @@ genotype**, DESeq2 on pseudobulk is the inferentially appropriate test — cells
 within a mouse are not independent replicates. Cell-level statistics are
 reported as descriptive.
 
-Over-representation analysis is **directionless**: an enriched pathway means the
-gene set is over-represented among the DEGs, not that the pathway is activated or
-suppressed. Direction has to be read from the underlying log₂ fold changes.
 
 ---
 
