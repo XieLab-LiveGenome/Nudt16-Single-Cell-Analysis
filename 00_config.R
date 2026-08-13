@@ -1,20 +1,7 @@
 # =============================================================================
 # 00_config.R  —  Shared configuration for the NUDT16 KO female spleen
 #                 scRNA-seq publication pipeline.
-#
-# SOURCED by every numbered stage script (01..05c) and by run_all.R. This is a
-# faithful modular split of Section 0 of MASTER_NUDT16_FEMALES.R. Values are kept
-# IDENTICAL to the master (CLUSTER_RES = 0.2, N_DIMS_USE = 20). The manuscript
-# STAR Methods reports res = 0.5 with 30 PCs; the master intentionally uses the
-# "preprocessfinal" harmony pipeline (dims 1:20, res 0.2) — see line ~171 of the
-# master. Change N_DIMS_USE / CLUSTER_RES below if you want to match the paper.
-#
-# Stage I/O contract (.rds files written to RES_DIR root, same as the master):
-#   01_preprocessing.R   -> female_obj_processed.rds
-#   02_cell_annotation.R -> female_obj_annotated.rds
-#   03_deg_seurat_deseq2 -> de_results.rds   (bundle consumed by 04 and 05c)
-#
-# Sourcing guard: each stage calls source(".../00_config.R"); on success we set
+
 # options(nudt16.config.loaded = TRUE).
 # =============================================================================
 
@@ -62,17 +49,14 @@ suppressPackageStartupMessages({
   library(openxlsx)
 })
 
-# Optional packages (loaded defensively; pipeline degrades gracefully) --------
+# Optional packages  --------
 HAVE_REACTOME  <- requireNamespace("ReactomePA",     quietly = TRUE)
 HAVE_COMPLEXHM <- requireNamespace("ComplexHeatmap", quietly = TRUE) &&
                   requireNamespace("circlize",       quietly = TRUE)
 HAVE_SPECKLE   <- requireNamespace("speckle",        quietly = TRUE)
 
 # ---- 0.2 conflicted guards --------------------------------------------------
-# Register each base preference INDIVIDUALLY. Batching them into one
-# conflicts_prefer() call is fragile: if any single symbol trips it, the whole
-# call fails under try() and NONE register (incl. base::unname) -> annotation
-# finalize aborts. One-by-one guarantees base::unname et al. are always set.
+
 if (requireNamespace("conflicted", quietly = TRUE)) {
   try(conflicted::conflict_prefer_all("dplyr", quiet = TRUE), silent = TRUE)
 
@@ -125,7 +109,7 @@ OUT_SUBDIRS <- c(
   "ddr_heatmap", "ddr_wt_vs_ko", "ddr_diagnostics",
   # tables
   "tables",
-  # pySCENIC (added by the modular split; not in the original master)
+  # pySCENIC 
   "scenic", file.path("scenic", "tcell"), file.path("scenic", "bcell")
 )
 for (sub in OUT_SUBDIRS) {
@@ -133,20 +117,20 @@ for (sub in OUT_SUBDIRS) {
 }
 if (dir.exists(project_dir)) setwd(project_dir)
 
-# Convenience path helper (rooted at RES_DIR)
+
 rf <- function(...) file.path(RES_DIR, ...)
 
-# Canonical saved-object paths (the .rds contracts between stages).
+
 RDS_PROCESSED <- rf("female_obj_processed.rds")   # after stage 01
 RDS_ANNOTATED <- rf("female_obj_annotated.rds")   # after stage 02
 RDS_DE        <- rf("de_results.rds")             # after stage 03
 
-# ---- 0.4 Global run knobs (single source of truth) --------------------------
+# ---- 0.4 Global run knobs--------------------------
 # Primary cell-type column used by ALL downstream DE / figures / enrichment.
 CELLTYPE_COL  <- "celltype_marker"     # BINDING: marker-based primary
 SECONDARY_COL <- "ImmGen.labels"       # SingleR secondary validation
 
-# Manual annotation overrides (applied in stage 02). Leave empty by default.
+# Manual annotation overrides 
 #   DROP_CLUSTERS : character vector of cluster ids to remove after labelling
 #   MANUAL_LABELS : named list, e.g. list("3" = "T cells", "7" = "DC")
 DROP_CLUSTERS <- character(0)
@@ -184,11 +168,7 @@ VOLC_ANCHOR           <- "Nudt16"
 # Figure output
 FIG_DPI               <- 400
 
-# Opt-in FindAllMarkers verification (OFF by default). The master's Section 4
-# crash was a fatal C-level segfault in the FindAllMarkers -> presto path on
-# Seurat v5. Keeping this FALSE removes that call from the annotation critical
-# path; set TRUE only after the presto issue is resolved (reinstall/remove
-# presto) if you want the marker cross-check written to marker_annotation/.
+
 RUN_MARKER_VERIFICATION <- FALSE
 
 # ---- 0.4b The 7 validated genes (drive the pySCENIC regulator analysis) -----
@@ -202,7 +182,7 @@ COL_HM   <- colorRampPalette(rev(brewer.pal(11, "RdBu")))(101)
 
 genotype_colors <- c(WT = "#3B6C9C", KO = "#D6604D")
 
-# Okabe-Ito based cell-type palette (stable across all figures)
+
 CELLTYPE_COLORS <- c(
   "B cells"           = "#0072B2",
   "T cells"           = "#D55E00",
@@ -298,14 +278,14 @@ ddr_focused <- list(
 )
 
 # ---- 0.8 Generic helpers ----------------------------------------------------
-# Resolve a metadata column name from candidates present in an object.
+
 pick_col <- function(obj, candidates, fallback = "seurat_clusters") {
   md <- colnames(obj@meta.data)
   hit <- candidates[candidates %in% md]
   if (length(hit)) hit[1] else fallback
 }
 
-# Resolve gene symbols/synonyms against a feature universe (e.g. rownames).
+
 resolve_genes <- function(genes, universe) {
   out <- character(0)
   for (g in genes) {
@@ -315,7 +295,7 @@ resolve_genes <- function(genes, universe) {
   unique(out)
 }
 
-# Flatten a DDR pathway list to a resolved gene table given a feature universe.
+
 resolve_ddr <- function(ddr, universe) {
   rows <- list()
   for (pw in names(ddr)) {
@@ -350,8 +330,7 @@ save_plot <- function(plot, path_noext, width = 8, height = 6, svg = FALSE) {
   invisible(path_noext)
 }
 
-# Resolve a normalized expression assay (prefer RNA 'data', else normalize,
-# else fall back to SCT). Returns the modified object + the assay name.
+
 ensure_norm_assay <- function(obj) {
   assay_use <- NULL
   if ("RNA" %in% Assays(obj)) {
@@ -372,7 +351,6 @@ ensure_norm_assay <- function(obj) {
   list(obj = obj, assay = assay_use)
 }
 
-# Wrap a figure-panel block so one failing panel never aborts the whole run.
 safe_panel <- function(name, expr) {
   message("\n>>> PANEL: ", name)
   tryCatch(
