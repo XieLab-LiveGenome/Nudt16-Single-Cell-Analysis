@@ -3,17 +3,9 @@
 #   cluster QC diagnostics -> marker-score annotation -> finalize (commit
 #   celltype_marker PRIMARY) -> marker dot plot + primary-label UMAP
 #
-# INPUT  : female_obj_processed.rds   (RDS_PROCESSED, from stage 01)
+# INPUT  : female_obj_processed.rds   (RDS_PROCESSED, )
 # OUTPUT : female_obj_annotated.rds   (RDS_ANNOTATED)
 #          cluster_qc/, marker_annotation/, panelE/, umap/ figures + tables
-#
-# Faithful split of Sections 2-5 of MASTER_NUDT16_FEMALES.R, with ONE change:
-# the data-driven FindAllMarkers verification in the finalize step is gated by
-# RUN_MARKER_VERIFICATION (default FALSE). On Seurat v5 + a broken `presto`,
-# FindAllMarkers can segfault the R session; keeping it off commits the
-# marker-score labels without that risk. Set RUN_MARKER_VERIFICATION <- TRUE in
-# 00_config.R (after fixing presto) to write annotation_verification.csv.
-# =============================================================================
 
 # --- source shared config ----------------------------------------------------
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
@@ -34,15 +26,12 @@ female_obj <- load_stage_rds(RDS_PROCESSED, "01_preprocessing.R")
 
 # =============================================================================
 # SECTION 2 — CLUSTER QC DIAGNOSTICS
-#   Flags doublet / junk clusters WITHOUT modifying the object. Writes tables +
-#   figures to cluster_qc/. Review cluster_qc_summary.csv (flag column) and set
-#   DROP_CLUSTERS in 00_config.R to remove any flagged clusters in Section 4.
 # =============================================================================
 message("\n[2] Cluster QC diagnostics...")
 
 safe_panel("cluster_qc", {
   cqc_dir <- rf("cluster_qc")
-  RUN_CLUSTER_MARKERS <- FALSE   # TRUE = also FindAllMarkers (slower; presto risk)
+  RUN_CLUSTER_MARKERS <- FALSE  
   COEXPR_MIN    <- 0
   PURITY_DROP   <- 0.60
   PURITY_REVIEW <- 0.75
@@ -188,9 +177,6 @@ safe_panel("cluster_qc", {
 
 # =============================================================================
 # SECTION 3 — MARKER-SCORE ANNOTATION
-#   AddModuleScore per canonical type -> mean per cluster -> column z-score ->
-#   argmax = marker_label. Writes cluster_assignment.csv (consumed by Section 4)
-#   + comparison tables/figures. Does NOT modify the object.
 # =============================================================================
 message("\n[3] Marker-score cluster annotation...")
 
@@ -360,14 +346,6 @@ safe_panel("marker_annotation", {
 
 # =============================================================================
 # SECTION 4 — FINALIZE ANNOTATION (commit celltype_marker as PRIMARY)
-#   Commits celltype_marker from the marker-score assignment (cluster_assignment
-#   .csv), applies manual overrides + DROP_CLUSTERS, keeps ImmGen.labels as
-#   secondary, saves female_obj_annotated.rds. Updates in-memory female_obj.
-#
-#   The optional data-driven cross-check (FindAllMarkers -> top-marker voting ->
-#   annotation_verification.csv) is gated by RUN_MARKER_VERIFICATION. It is OFF
-#   by default because FindAllMarkers can segfault the R session on Seurat v5
-#   with a broken `presto`. Committing the labels does NOT require it.
 # =============================================================================
 message("\n[4] Finalize annotation -> celltype_marker PRIMARY...")
 
@@ -407,7 +385,6 @@ FINALIZE_MARKER_PADJ <- 0.05
   canon  <- lapply(canon, function(x) x[!is.na(x)])
   `%||%` <- function(a, b) if (is.null(a)) b else a
 
-  # -------- OPTIONAL data-driven verification (OFF by default) ---------------
   if (isTRUE(RUN_MARKER_VERIFICATION)) {
     message("  [verify] running FindAllMarkers cross-check (RUN_MARKER_VERIFICATION = TRUE)...")
     Idents(obj) <- clu
@@ -438,7 +415,7 @@ FINALIZE_MARKER_PADJ <- 0.05
             "Committing marker-score labels directly.")
   }
 
-  # -------- Commit celltype_marker (always runs) -----------------------------
+
   obj$celltype_marker <- factor(unname(lab_map[as.character(clu)]))
   if (length(DROP_CLUSTERS)) {
     keep_cells <- !(as.character(clu) %in% as.character(DROP_CLUSTERS))
@@ -481,7 +458,7 @@ FINALIZE_MARKER_PADJ <- 0.05
   }
 
   saveRDS(obj, RDS_ANNOTATED)
-  female_obj <- obj              # promote annotated object for all downstream work
+  female_obj <- obj              
   message("  saved female_obj_annotated.rds ; Idents = celltype_marker")
 }
 
@@ -492,8 +469,6 @@ CT_PALETTE <- build_celltype_palette(CT_LEVELS)
 
 # =============================================================================
 # SECTION 5 — MARKER DOT PLOT + PRIMARY-LABEL UMAP
-#   Block-diagonal canonical-marker dot plot on celltype_marker + a labelled
-#   UMAP of the primary annotation. Written to panelE/ and umap/.
 # =============================================================================
 message("\n[5] Marker dot plot + primary-label UMAP...")
 
