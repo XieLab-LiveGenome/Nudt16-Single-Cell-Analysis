@@ -7,12 +7,8 @@
 # OUTPUT : female_obj_processed.rds   (RDS_PROCESSED)
 #          qc/, umap/, composition/ figures + tables
 #
-# Faithful split of Section 1 of MASTER_NUDT16_FEMALES.R.
 # =============================================================================
 
-# --- source shared config ----------------------------------------------------
-# Robust locator: works whether the stage is run from the pipeline folder, the
-# project root, or via run_all.R (which sets nudt16.config.loaded).
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
   cand <- c(
     "00_config.R",
