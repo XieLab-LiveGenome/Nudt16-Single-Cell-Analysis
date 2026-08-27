@@ -1,10 +1,7 @@
 # =============================================================================
 # 00_config.R  —  Shared configuration for the NUDT16 KO female spleen
 #                 scRNA-seq publication pipeline.
-
-# options(nudt16.config.loaded = TRUE).
 # =============================================================================
-
 # ---- 0.1 Libraries ----------------------------------------------------------
 suppressPackageStartupMessages({
   # Core
@@ -49,13 +46,10 @@ suppressPackageStartupMessages({
   library(openxlsx)
 })
 
-# Optional packages  --------
 HAVE_REACTOME  <- requireNamespace("ReactomePA",     quietly = TRUE)
 HAVE_COMPLEXHM <- requireNamespace("ComplexHeatmap", quietly = TRUE) &&
                   requireNamespace("circlize",       quietly = TRUE)
 HAVE_SPECKLE   <- requireNamespace("speckle",        quietly = TRUE)
-
-# ---- 0.2 conflicted guards --------------------------------------------------
 
 if (requireNamespace("conflicted", quietly = TRUE)) {
   try(conflicted::conflict_prefer_all("dplyr", quiet = TRUE), silent = TRUE)
@@ -86,14 +80,13 @@ set.seed(217)
 options(Seurat.object.assay.version = "v5")
 options(future.globals.maxSize = 8 * 1024^3)  # 8 GiB for parallel steps
 
-# ---- 0.3 Paths --------------------------------------------------------------
-project_dir <- "/Users/budankm/Desktop/Sequencing/GONG"
+# ---- Paths --------------------------------------------------------------
+project_dir <- "Insert Here"
 RES_DIR     <- file.path(project_dir, "results", "females")
-PIPE_DIR    <- file.path(RES_DIR, "pipeline")   # location of these scripts
-SCENIC_DIR  <- file.path(RES_DIR, "scenic")     # pySCENIC inputs/outputs (stage 05)
+PIPE_DIR    <- file.path(RES_DIR, "pipeline")   
+SCENIC_DIR  <- file.path(RES_DIR, "scenic")     
 
-# All output subfolders used anywhere in the pipeline (kept per binding decision
-# "keep current subfolders"). Created up-front so every stage can write.
+
 OUT_SUBDIRS <- c(
   # preprocessing / core
   "qc", "umap", "composition", "volcano", "enrichment", "gene_plots", "heatmap",
@@ -116,17 +109,13 @@ for (sub in OUT_SUBDIRS) {
   dir.create(file.path(RES_DIR, sub), recursive = TRUE, showWarnings = FALSE)
 }
 if (dir.exists(project_dir)) setwd(project_dir)
-
-
 rf <- function(...) file.path(RES_DIR, ...)
-
 
 RDS_PROCESSED <- rf("female_obj_processed.rds")   # after stage 01
 RDS_ANNOTATED <- rf("female_obj_annotated.rds")   # after stage 02
 RDS_DE        <- rf("de_results.rds")             # after stage 03
 
-# ---- 0.4 Global run knobs--------------------------
-# Primary cell-type column used by ALL downstream DE / figures / enrichment.
+# Primary cell-type 
 CELLTYPE_COL  <- "celltype_marker"     # BINDING: marker-based primary
 SECONDARY_COL <- "ImmGen.labels"       # SingleR secondary validation
 
@@ -144,8 +133,8 @@ MIN_CELLS_PER_LABEL   <- 15      # ImmGen label retention threshold
 # Embedding (harmony pipeline from preprocessfinal — NOT dims 1:30 / res 0.5)
 N_VAR_FEATURES        <- 3000
 N_PCS                 <- 50
-N_DIMS_USE            <- 20      # paper STAR Methods uses 30
-CLUSTER_RES           <- 0.2     # paper STAR Methods uses 0.5
+N_DIMS_USE            <- 20      
+CLUSTER_RES           <- 0.5     
 
 # Pseudobulk / Seurat DE
 MIN_CELLS_PER_SAMPLE  <- 10
@@ -168,20 +157,18 @@ VOLC_ANCHOR           <- "Nudt16"
 # Figure output
 FIG_DPI               <- 400
 
-
 RUN_MARKER_VERIFICATION <- FALSE
 
-# ---- 0.4b The 7 validated genes (drive the pySCENIC regulator analysis) -----
+# ---- The 7 validated genes (the pySCENIC regulator analysis) -----
 VALIDATED_GENES <- c("Ccnb2", "Cdk1", "E2f8", "Ermap", "Marchf8", "Pdzk1ip1", "Ung")
 
-# ---- 0.5 Color anchors / palettes ------------------------------------------
+# ---- Color anchors / palettes ------------------------------------------
 COL_UP   <- "#B2182B"     # KO-up  (red)
 COL_DOWN <- "#2166AC"     # WT-up  (blue)
 COL_NS   <- "grey75"
 COL_HM   <- colorRampPalette(rev(brewer.pal(11, "RdBu")))(101)
 
 genotype_colors <- c(WT = "#3B6C9C", KO = "#D6604D")
-
 
 CELLTYPE_COLORS <- c(
   "B cells"           = "#0072B2",
@@ -217,7 +204,7 @@ lighten_hex <- function(hex, amt = 0.40) {
   grDevices::rgb(rgb1[1, ], rgb1[2, ], rgb1[3, ])
 }
 
-# ---- 0.6 Canonical marker sets (13 immune/stromal types) --------------------
+# ---- Canonical marker sets (immune/stromal types) --------------------
 marker_list <- list(
   "B cells"           = c("Cd79a", "Ms4a1", "Cd79b", "Cd19"),
   "T cells"           = c("Cd3e", "Cd3d", "Cd3g", "Cd2"),
@@ -234,7 +221,7 @@ marker_list <- list(
   "Stem cells"        = c("Cd34", "Kit")
 )
 
-# Compact 2-gene dot-plot marker set (block-diagonal display)
+# Compact 2-gene dot-plot marker set
 marker_list_dot <- list(
   "B cells"           = c("Cd79a", "Ms4a1"),
   "T cells"           = c("Cd3e", "Cd3d"),
@@ -251,8 +238,8 @@ marker_list_dot <- list(
   "Stem cells"        = c("Cd34", "Kit")
 )
 
-# ---- 0.7 DDR / DNA-repair gene sets (Knijnenburg et al., Cell Rep 2018) -----
-# Each entry: pathway -> named list of gene -> synonym candidates.
+# ----  DDR / DNA-repair gene sets (Knijnenburg et al., Cell Rep 2018) -----
+
 DDR_CITATION <- paste(
   "DDR/DNA-repair gene sets adapted from Knijnenburg TA et al.,",
   "'Genomic and Molecular Landscape of DNA Damage Repair Deficiency across",
@@ -277,14 +264,13 @@ ddr_focused <- list(
                       Ung = "Ung", Dut = "Dut")
 )
 
-# ---- 0.8 Generic helpers ----------------------------------------------------
+# ---- Generic helpers ----------------------------------------------------
 
 pick_col <- function(obj, candidates, fallback = "seurat_clusters") {
   md <- colnames(obj@meta.data)
   hit <- candidates[candidates %in% md]
   if (length(hit)) hit[1] else fallback
 }
-
 
 resolve_genes <- function(genes, universe) {
   out <- character(0)
@@ -294,7 +280,6 @@ resolve_genes <- function(genes, universe) {
   }
   unique(out)
 }
-
 
 resolve_ddr <- function(ddr, universe) {
   rows <- list()
@@ -330,7 +315,6 @@ save_plot <- function(plot, path_noext, width = 8, height = 6, svg = FALSE) {
   invisible(path_noext)
 }
 
-
 ensure_norm_assay <- function(obj) {
   assay_use <- NULL
   if ("RNA" %in% Assays(obj)) {
@@ -360,10 +344,8 @@ safe_panel <- function(name, expr) {
   )
 }
 
-# Excel-safe sheet name (<=31 chars)
+# Excel-safe sheet name 
 safe_sheet <- function(x) substr(gsub("[^A-Za-z0-9_]", "_", x), 1, 31)
-
-# load_stage_rds(): read a prior stage's .rds with a clear error if missing.
 load_stage_rds <- function(path, produced_by) {
   if (!file.exists(path)) {
     stop("Required input not found: ", path,
@@ -373,7 +355,7 @@ load_stage_rds <- function(path, produced_by) {
   readRDS(path)
 }
 
-# ---- 0.9 Done ---------------------------------------------------------------
+# ---- Done ---------------------------------------------------------------
 options(nudt16.config.loaded = TRUE)
 message("\n================  NUDT16 FEMALES config loaded  ================")
 message("Output dir: ", RES_DIR)
