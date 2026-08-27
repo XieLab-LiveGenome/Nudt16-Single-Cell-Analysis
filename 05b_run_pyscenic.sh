@@ -1,31 +1,19 @@
-#!/usr/bin/env bash
 # =============================================================================
 # 05b_run_pyscenic.sh  —  NUDT16 KO female spleen scRNA-seq
-#   Genome-wide gene regulatory network inference with pySCENIC:
-#     GRNBoost2 (grn) -> cisTarget pruning (ctx) -> AUCell (aucell)
-# INPUTS 
-#   expr_counts.mtx, genes.txt, barcodes.txt, cell_metadata.csv, validated_genes.txt
-#   (or a prebuilt female_counts.loom)
-# OUTPUTS (in $SCENIC_DIR):
-#   adjacencies.tsv        GRNBoost2 co-expression modules
-#   regulons.csv           cisTarget-pruned regulons (motif-enriched)
-#   aucell.loom            AUCell regulon activity (loom)
-#   auc_mtx.csv            cells x regulons AUCell matrix 
-#   regulon_targets.csv    regulon,target long table     
 # =============================================================================
 set -euo pipefail
 
-# ---- paths ------------------------------------------------------------------
-PROJECT_DIR="${PROJECT_DIR:-/Users/budankm/Desktop/Sequencing/GONG}"
-SCENIC_DIR="${SCENIC_DIR:-$PROJECT_DIR/results/females/scenic}"
+PROJECT_DIR="${PROJECT_DIR:-/Users/}"
+SCENIC_DIR="${SCENIC_DIR:-$PROJECT_DIR/results/}"
 
 # ---- RESOURCES  -------------------------------------------------
 # Mouse mm10 mc9nr cisTarget databases + TF list + motif annotations.
-# Download once from https://resources.aertslab.org/cistarget/ if you have not.
+# Download once from https://resources.aertslab.org/cistarget/
 RESOURCES_DIR="${RESOURCES_DIR:-$HOME/scenic_resources/mm10}"
 TF_LIST="${TF_LIST:-$RESOURCES_DIR/allTFs_mm.txt}"
 MOTIF_ANNOT="${MOTIF_ANNOT:-$RESOURCES_DIR/motifs-v9-nr.mgi-m0.001-o0.0.tbl}"
-# One or more ranking databases (space-separated). 10kb + 500bp is typical.
+
+# Ranking databases 
 RANKING_DBS="${RANKING_DBS:-\
 $RESOURCES_DIR/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.genes_vs_motifs.rankings.feather \
 $RESOURCES_DIR/mm10__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.genes_vs_motifs.rankings.feather}"
@@ -69,8 +57,7 @@ import scipy.sparse as sp
 import loompy as lp
 
 d = sys.argv[1]
-# MatrixMarket is genes x cells; SCENIC/loom wants genes x cells with
-# row_attrs Gene and col_attrs CellID.
+
 m = sio.mmread(os.path.join(d, "expr_counts.mtx")).tocsc()   # genes x cells
 genes = [l.strip() for l in open(os.path.join(d, "genes.txt"))]
 cells = [l.strip() for l in open(os.path.join(d, "barcodes.txt"))]
@@ -130,7 +117,6 @@ with lp.connect(os.path.join(d, "aucell.loom"), mode="r", validate=False) as ds:
         ds.ca["RegulonsAUC"] if "RegulonsAUC" in ds.ca.keys() else None
     )
     cells = ds.ca["CellID"]
-# Older/newer pySCENIC store AUC differently; fall back to the structured array.
 if auc is None or auc.shape[1] == 0:
     with lp.connect(os.path.join(d, "aucell.loom"), mode="r", validate=False) as ds:
         rec = ds.ca["RegulonsAUC"]
@@ -140,13 +126,10 @@ auc.index.name = "CellID"
 auc.to_csv(os.path.join(d, "auc_mtx.csv"))
 print("  wrote auc_mtx.csv:", auc.shape[0], "cells x", auc.shape[1], "regulons")
 
-# 4b. regulon -> target long table, parsed from regulons.csv (ctx output).
-# The ctx CSV has a 2-row header (multi-index). The TargetGenes column holds a
-# stringified list of (gene, weight) tuples per enriched motif row.
 reg = pd.read_csv(os.path.join(d, "regulons.csv"), header=[0, 1], index_col=[0, 1])
-# TF is the first index level.
+
 tf_level = reg.index.get_level_values(0)
-# Find the TargetGenes column regardless of the top header label.
+
 tgt_col = [c for c in reg.columns if c[1] == "TargetGenes"]
 rows = []
 if tgt_col:
@@ -157,7 +140,7 @@ if tgt_col:
         for g in re.findall(r"\('([^']+)',\s*([0-9.eE+-]+)\)", cell):
             rows.append((f"{tf}(+)", tf, g[0], float(g[1])))
 tt = pd.DataFrame(rows, columns=["regulon", "TF", "target", "weight"])
-# collapse duplicate (regulon, target) keeping max weight
+
 if len(tt):
     tt = (tt.sort_values("weight", ascending=False)
             .drop_duplicates(["regulon", "target"]))
