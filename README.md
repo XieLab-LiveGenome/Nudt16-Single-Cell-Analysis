@@ -107,10 +107,9 @@ files) and the motif annotation table from the
 ## Data availability
 
 Raw FASTQ and processed count matrices are deposited in NCBI GEO under accession
-`GSEXXXXXX`. The scripts expect the PIPseeker `barcodes.tsv` / `features.tsv` /
-`matrix.mtx` triplets; point `00_config.R` at wherever you unpack them.
+`GSE344031`. The scripts expect the PIPseeker `barcodes.tsv` / `features.tsv` /
+`matrix.mtx` triplets; point `00_config.R` at directory. 
 
-Nothing in this repository contains sequencing data — only code.
 
 ---
 
