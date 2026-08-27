@@ -1,13 +1,5 @@
 # =============================================================================
 # 04_gsea_hallmark.R  —  NUDT16 KO female spleen scRNA-seq
-#   Functional enrichment:
-#     9A. Pseudobulk DESeq2 DEGs -> ORA (GO/KEGG/Reactome/Hallmark) -> enrichment/
-#     9B. Seurat FindMarkers -> MSigDB Hallmark GSEA (fgsea, ranked by `stat`)
-#         + directional Hallmark ORA           -> enrichment_hallmark/
-#
-# INPUT  : de_results.rds   (RDS_DE, from stage 03)
-# OUTPUT : enrichment/ (GO/KEGG/Reactome/Hallmark ORA on pseudobulk DEGs)
-#          enrichment_hallmark/ (Hallmark GSEA + directional ORA on Seurat DE)
 # =============================================================================
 
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
@@ -15,7 +7,7 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
     "00_config.R",
     file.path("pipeline", "00_config.R"),
     file.path("results", "females", "pipeline", "00_config.R"),
-    "/Users/budankm/Desktop/Sequencing/GONG/results/females/pipeline/00_config.R"
+    "/00_config.R"
   )
   hit <- cand[file.exists(cand)]
   if (!length(hit)) stop("Cannot locate 00_config.R — run from the pipeline folder.")
@@ -86,7 +78,7 @@ run_enrichment_analysis <- function(gene_list, gene_universe, analysis_name) {
 }
 
 # =============================================================================
-# SECTION 9 — FUNCTIONAL ENRICHMENT
+# FUNCTIONAL ENRICHMENT
 # =============================================================================
 message("\n[9] Functional enrichment (pseudobulk ORA + Hallmark GSEA/ORA)...")
 
@@ -222,8 +214,7 @@ safe_panel("enrichment_hallmark", {
     }
     do_dir(up, "UP", up_fill); do_dir(dn, "DOWN", dn_fill)
   }
-
-  # Global + every celltype_marker group
+                    
   groups <- c(list(Global = seurat_de_global), seurat_de_by_celltype)
   for (label in names(groups)) {
     local({
