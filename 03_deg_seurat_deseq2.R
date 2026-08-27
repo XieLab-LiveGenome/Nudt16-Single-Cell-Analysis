@@ -6,7 +6,7 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
     "00_config.R",
     file.path("pipeline", "00_config.R"),
     file.path("results", "females", "pipeline", "00_config.R"),
-    "/Users/budankm/Desktop/Sequencing/GONG/results/females/pipeline/00_config.R"
+    "00_config.R"
   )
   hit <- cand[file.exists(cand)]
   if (!length(hit)) stop("Cannot locate 00_config.R — run from the pipeline folder.")
