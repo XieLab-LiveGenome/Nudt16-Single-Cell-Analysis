@@ -1,12 +1,5 @@
 # =============================================================================
 # 01_preprocessing.R  —  NUDT16 KO female spleen scRNA-seq
-#   load -> QC -> doublets -> MAD filter -> SCT -> Harmony -> cluster ->
-#   UMAP -> SingleR (secondary) -> composition -> save processed RDS
-#
-# INPUT  : PIPseeker filtered matrices (relative to project_dir; config setwd's).
-# OUTPUT : female_obj_processed.rds   (RDS_PROCESSED)
-#          qc/, umap/, composition/ figures + tables
-#
 # =============================================================================
 
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
@@ -14,7 +7,7 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
     "00_config.R",
     file.path("pipeline", "00_config.R"),
     file.path("results", "females", "pipeline", "00_config.R"),
-    "/Users/budankm/Desktop/Sequencing/GONG/results/females/pipeline/00_config.R"
+    "/pipeline/00_config.R"
   )
   hit <- cand[file.exists(cand)]
   if (!length(hit)) stop("Cannot locate 00_config.R — run from the pipeline folder.")
@@ -154,12 +147,12 @@ ggsave(rf("umap", "UMAP_clusters.pdf"),  p4, width = 8, height = 6)
 ggsave(rf("umap", "UMAP_all.pdf"), (p1 | p2) / (p3 | p4),
        width = 14, height = 12)
 
-# ---- 1.7 SingleR annotation (SECONDARY / validation) ------------------------
+# ---- 1.7 SingleR annotation ------------------------
 message("\n[1.7] SingleR annotation against ImmGen (secondary label)...")
 
 DefaultAssay(female_obj) <- "RNA"
 female_obj <- JoinLayers(female_obj, assay = "RNA")
-# Ensure an RNA 'data' layer exists for all downstream figure panels.
+
 female_obj <- NormalizeData(female_obj, assay = "RNA", verbose = FALSE)
 
 cts <- GetAssayData(female_obj, assay = "RNA", layer = "counts")
