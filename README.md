@@ -1,13 +1,9 @@
 # Nudt16-Single-Cell-Analysis
 
 Single-cell RNA-seq analysis of spleen from Nudt16 knockout and wild-type mice.
+This repository contains the analysis workflow for "Single-cell transcriptomics of Nudt16-deficient mouse spleen identifies coordinated alterations in DNA damage response and immune homeostasis."
 
-This repository contains the full analysis workflow 
-"Single-cell transcriptomics of Nudt16-deficient mouse spleen identifies coordinated alterations in DNA damage response and immune homeostasis."
-
-Every figure panel in the paper can be regenerated from these scripts with the deposited count matrices. 
-
-**Data:** GEO accession `GSEXXXXXX` 
+**Data:** GEO accession `GSE344031` 
 **Preprint/paper:** `DOI pending` 
 **Contact:** [@megbudankayala](https://github.com/megbudankayala)
 
@@ -100,11 +96,11 @@ BiocManager::install(c("scDblFinder", "SingleR", "celldex", "DESeq2",
 pip install pyscenic
 ```
 
-`05b_run_pyscenic.sh` also needs the mouse cisTarget databases (`mm10` feather
+`05b_run_pyscenic.sh` needs the mouse cisTarget databases (`mm10` feather
 files) and the motif annotation table from the
 [SCENIC resources](https://resources.aertslab.org/cistarget/).
 
-<!-- TODO: pin exact versions with sessionInfo() output, or add renv.lock -->
+
 
 ---
 
@@ -127,19 +123,12 @@ The manuscript figures map to stages as follows:
 - **Figure 4** — DNA-damage/repair and immune gene panels (`03`, `04`)
 - **Figure 5** — regulon activity in T and B cells (`05a`–`05c`)
 
-<!-- TODO: if you add the Python panel scripts (figure1.py, figure3.py),
-     put them in figures/ and list them here -->
 
 ---
 
 ## Notes on interpretation
-
-Two points worth stating plainly for anyone reusing this code:
-
 The cell-level Wilcoxon test in Seurat and the pseudobulk DESeq2 test answer
-different questions and do not always agree in direction. With **n = 2 mice per
-genotype**, DESeq2 on pseudobulk is the inferentially appropriate test — cells
-within a mouse are not independent replicates. Cell-level statistics are
+different questions and do not always agree in direction. DESeq2 on pseudobulk is the inferentially appropriate test, cell-level statistics are
 reported as descriptive.
 
 
@@ -147,7 +136,7 @@ reported as descriptive.
 
 ## Citation
 
-If you use this workflow, please cite:
+Please cite:
 
 > Wang, Budankayala M., Samsa, Xie, Gong. *Single-cell transcriptomics of
 > Nudt16-deficient mouse spleen identifies coordinated alterations in DNA damage
