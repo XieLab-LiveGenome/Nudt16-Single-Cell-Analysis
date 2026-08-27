@@ -1,12 +1,5 @@
 # =============================================================================
 # 02_cell_annotation.R  —  NUDT16 KO female spleen scRNA-seq
-#   cluster QC diagnostics -> marker-score annotation -> finalize (commit
-#   celltype_marker PRIMARY) -> marker dot plot + primary-label UMAP
-#
-# INPUT  : female_obj_processed.rds   (RDS_PROCESSED, )
-# OUTPUT : female_obj_annotated.rds   (RDS_ANNOTATED)
-#          cluster_qc/, marker_annotation/, panelE/, umap/ figures + tables
-
 # --- source shared config ----------------------------------------------------
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
   cand <- c(
@@ -25,7 +18,7 @@ message("\n=========  STAGE 02 — CELL ANNOTATION  =========")
 female_obj <- load_stage_rds(RDS_PROCESSED, "01_preprocessing.R")
 
 # =============================================================================
-# SECTION 2 — CLUSTER QC DIAGNOSTICS
+#  CLUSTER QC DIAGNOSTICS
 # =============================================================================
 message("\n[2] Cluster QC diagnostics...")
 
@@ -174,9 +167,8 @@ safe_panel("cluster_qc", {
   }
 })
 
-
 # =============================================================================
-# SECTION 3 — MARKER-SCORE ANNOTATION
+# MARKER-SCORE ANNOTATION
 # =============================================================================
 message("\n[3] Marker-score cluster annotation...")
 
@@ -343,9 +335,8 @@ safe_panel("marker_annotation", {
   save_plot(pcf, file.path(ma_dir, "confusion_heatmap"), 8, 7)
 })
 
-
 # =============================================================================
-# SECTION 4 — FINALIZE ANNOTATION (commit celltype_marker as PRIMARY)
+# FINALIZE ANNOTATION 
 # =============================================================================
 message("\n[4] Finalize annotation -> celltype_marker PRIMARY...")
 
@@ -415,7 +406,6 @@ FINALIZE_MARKER_PADJ <- 0.05
             "Committing marker-score labels directly.")
   }
 
-
   obj$celltype_marker <- factor(unname(lab_map[as.character(clu)]))
   if (length(DROP_CLUSTERS)) {
     keep_cells <- !(as.character(clu) %in% as.character(DROP_CLUSTERS))
@@ -462,13 +452,13 @@ FINALIZE_MARKER_PADJ <- 0.05
   message("  saved female_obj_annotated.rds ; Idents = celltype_marker")
 }
 
-# Cell types actually present, ordered by abundance (used across all downstream)
+
 CT_LEVELS <- names(sort(table(as.character(female_obj$celltype_marker)), decreasing = TRUE))
 CT_PALETTE <- build_celltype_palette(CT_LEVELS)
 
 
 # =============================================================================
-# SECTION 5 — MARKER DOT PLOT + PRIMARY-LABEL UMAP
+# MARKER DOT PLOT + PRIMARY-LABEL UMAP
 # =============================================================================
 message("\n[5] Marker dot plot + primary-label UMAP...")
 
