@@ -1,13 +1,5 @@
 # =============================================================================
 # 03_deg_seurat_deseq2.R  —  NUDT16 KO female spleen scRNA-seq
-#   Differential expression (KO vs WT), two engines:
-#     6A. Pseudobulk DESeq2 (mice as replicates) : global + per celltype_marker
-#     6B. Seurat FindMarkers (Wilcoxon, cells)   : global + per celltype_marker
-#   7.  Volcano plots (both engines x global + each cell type)
-#
-# INPUT  : female_obj_annotated.rds   (RDS_ANNOTATED, from stage 02)
-# OUTPUT : de_results.rds             (RDS_DE — consumed by 04 and 05c)
-#          volcano/deseq2/, volcano/seurat/ tables + volcano figures
 # =============================================================================
 if (!isTRUE(getOption("nudt16.config.loaded"))) {
   cand <- c(
@@ -24,13 +16,11 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
 message("\n=========  STAGE 03 — DIFFERENTIAL EXPRESSION  =========")
 
 female_obj <- load_stage_rds(RDS_ANNOTATED, "02_cell_annotation.R")
-
-# Cell types present, ordered by abundance (drives per-celltype loops + palette)
 CT_LEVELS  <- names(sort(table(as.character(female_obj$celltype_marker)), decreasing = TRUE))
 CT_PALETTE <- build_celltype_palette(CT_LEVELS)
 
 # =============================================================================
-# SECTION 6 — DIFFERENTIAL EXPRESSION (KO vs WT)
+# DIFFERENTIAL EXPRESSION (KO vs WT)
 # =============================================================================
 message("\n[6] Differential expression (KO vs WT)...")
 
@@ -193,15 +183,12 @@ for (ct in CT_LEVELS) {
   write.csv(res, rf("volcano", "seurat", paste0("Seurat_", safe_sheet(ct), "_all.csv")),
             row.names = FALSE)
 }
-
-
 # =============================================================================
-# SECTION 7 — VOLCANO PLOTS (BOTH methods x global + each cell type)
+# VOLCANO PLOTS 
 #   DESeq2  -> volcano/deseq2/   ;  Seurat -> volcano/seurat/
 # =============================================================================
 message("\n[7] Volcano plots (DESeq2 + Seurat, global + per cell type)...")
 
-# Generic volcano from a DE data frame. Column names supplied by caller.
 make_volcano_plot <- function(df, gene_col, lfc_col, fdr_col, title, out_stem,
                               lfc_cut = LFC_CUT, fdr_cut = PADJ_CUT,
                               n_label = VOLC_N_LABEL, anchor = VOLC_ANCHOR) {
