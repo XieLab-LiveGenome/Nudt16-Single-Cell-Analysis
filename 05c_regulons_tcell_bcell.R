@@ -11,7 +11,7 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
     "00_config.R",
     file.path("pipeline", "00_config.R"),
     file.path("results", "females", "pipeline", "00_config.R"),
-    "/Users/budankm/Desktop/Sequencing/GONG/results/females/pipeline/00_config.R"
+    "/00_config.R"
   )
   hit <- cand[file.exists(cand)]
   if (!length(hit)) stop("Cannot locate 00_config.R — run from the pipeline folder.")
@@ -20,7 +20,7 @@ if (!isTRUE(getOption("nudt16.config.loaded"))) {
 
 message("\n=========  STAGE 05c — SCENIC REGULONS (T & B cells, 7 genes)  =========")
 
-# --- Compartment definitions  --------
+
 TCELL_TYPES <- c("T cells")            
 BCELL_TYPES <- c("B cells")
 
@@ -48,7 +48,6 @@ vg <- if (file.exists(vg_path)) readLines(vg_path) else VALIDATED_GENES
 vg <- vg[nzchar(vg)]
 message("  validated genes: ", paste(vg, collapse = ", "))
 
-# Align AUC rows to metadata barcodes.
 common <- intersect(rownames(auc), meta$barcode)
 if (!length(common)) stop("No overlap between AUCell cell IDs and Seurat barcodes.")
 auc  <- auc[common, , drop = FALSE]
